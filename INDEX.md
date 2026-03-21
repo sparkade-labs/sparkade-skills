@@ -23,9 +23,11 @@ Read both in full before writing any code. They contain the canonical boilerplat
 
 ## Step 2 — Fetch the genre skill
 
-| Genre | Skill URL |
-|-------|-----------|
-| Roguelite | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/SKILL.md |
+Pick the genre that best matches the game brief and fetch that skill only. Do not fetch multiple genre skills unless explicitly instructed.
+
+| Genre | Description | Skill URL |
+|-------|-------------|-----------|
+| Roguelite | Top-down arena combat with procedural rooms, enemy variety, and per-run upgrade choices. Runs last 3–6 minutes. | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/SKILL.md |
 
 The genre skill will instruct you to fetch additional sub-skills. Follow those instructions.
 

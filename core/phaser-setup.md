@@ -116,6 +116,33 @@ Dark, muddy UI is the most frequent quality issue in AI-generated Sparkade games
 
 ---
 
+## Delta-Time Scoring — Mandatory
+
+**Never increment score directly in `update()`.** Phaser's `update()` runs every frame. On a 120 fps desktop it fires twice as often as on a 60 fps phone, meaning a player on desktop accrues points twice as fast. This is the single most common fairness bug in Sparkade games.
+
+All time-based scoring must use a delta accumulator:
+
+```js
+// In create():
+this._scoreTick = 0;
+
+// In update(time, delta):
+this._scoreTick += delta;           // delta = ms since last frame (Phaser passes this)
+if (this._scoreTick >= 1000) {      // every real-world second, regardless of frame rate
+  this._scoreTick -= 1000;          // subtract rather than reset — absorbs leftover ms
+  this.score += 1;
+  this._updateScoreUI();
+}
+```
+
+This produces exactly 1 point per real second at any frame rate.
+
+**The same rule applies to any continuous mechanic** — speed ramps, spawn rate increases, difficulty timers. If it changes over time, gate it through `delta`, not frame count.
+
+Event-based scoring (points on hit, points on pickup) is fine to apply immediately — those are not frame-coupled.
+
+---
+
 ## Performance Standards
 
 - Use object pools for bullets and frequently-spawned objects. Never `new` an object in `update()`.

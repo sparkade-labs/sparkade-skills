@@ -123,3 +123,22 @@ Dark, muddy UI is the most frequent quality issue in AI-generated Sparkade games
 - Cap active enemy count at 15.
 - Bullets despawn at range limits, not by off-screen check.
 - Always use `delta`-based movement or Phaser physics velocities. Never hardcode per-frame pixel values.
+
+---
+
+## Available Browser APIs
+
+The game runs inside an iframe on the Sparkade platform. The following browser APIs are fully available and confirmed working — do not hesitate to use them:
+
+**Web Audio API** — use `window.AudioContext` (or `window.webkitAudioContext`) for all sound effects. No libraries needed. Generate everything procedurally with oscillators, filters, and gain nodes.
+
+**One mandatory rule:** never instantiate `AudioContext` on page load. Browsers suspend audio contexts created before a user interaction. Create it on the first `pointerdown` or equivalent input event — Phaser's input system satisfies this naturally.
+
+```js
+// Correct — create on first interaction
+this.input.once('pointerdown', () => {
+  this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+});
+```
+
+All other standard browser APIs (Canvas 2D, requestAnimationFrame, localStorage, etc.) are equally available. The iframe `allow="autoplay"` attribute is already set by the platform shell.

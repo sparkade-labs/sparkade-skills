@@ -1,86 +1,73 @@
 # Roguelite — Genre Skill
 
-You are building a roguelite for the Sparkade platform. Read this file in full, then fetch each sub-skill listed below before writing any code.
+You are building a roguelite for the Sparkade platform. Read this file in full, then fetch each sub-skill listed below.
 
 ---
 
-## What makes a great Sparkade roguelite
+## What a great Sparkade roguelite feels like
 
-A great Sparkade roguelite delivers a complete, satisfying run in **3–6 minutes**. The run must feel fair, escalate in tension, and end with the player immediately wanting to try again. On mobile, everything must be controllable one-handed.
+A complete, satisfying run in 3–6 minutes. The player dies, immediately understands why, and wants to try again with a different approach. Every run feels distinct. Difficulty escalates smoothly — never a wall, never a plateau.
 
-**The four pillars:**
-1. **Momentum** — the player always has something to do and something to look forward to. No dead air.
-2. **Escalation** — depth should visibly increase difficulty and reward. Players should feel the pressure build.
-3. **Agency** — upgrade choices must feel meaningful. Bad builds exist but bad luck alone should never be the cause of death.
-4. **Clarity** — health, score, and depth must always be visible. Never obscure critical information.
+**The four non-negotiables:**
+1. **Momentum** — there is always something happening or about to happen. Dead air kills engagement.
+2. **Escalation** — the player should feel pressure increasing with every room. Depth must matter.
+3. **Agency** — upgrade choices must change how the run plays, not just make numbers bigger.
+4. **Clarity** — health, score, and depth are always visible. The player always knows how they're doing.
 
 ---
 
 ## Sub-skills — fetch all of these
 
-| Sub-skill | URL | When to fetch |
-|-----------|-----|---------------|
-| Run Structure | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/run-structure.md | Always |
-| Combat | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/combat.md | Always |
-| Upgrades | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/upgrades.md | Always |
-| Procedural Generation | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/procedural.md | Always |
+| Sub-skill | URL |
+|-----------|-----|
+| Run Structure | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/run-structure.md |
+| Combat | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/combat.md |
+| Upgrades | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/upgrades.md |
+| Procedural Generation | https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/genres/roguelite/procedural.md |
 
-Also fetch the polish skill if not already fetched:
+Also fetch if not already fetched:
 - https://raw.githubusercontent.com/sparkade-labs/sparkade-skills/main/core/polish.md
 
 ---
 
 ## Score design
 
-Score in a roguelite should reflect **depth + performance**, not just time alive.
+Score should reflect both depth reached and performance within each room. Reward the player for playing well, not just for surviving. A multiplier system, combo system, or room-clear bonus each work — choose what fits your theme.
 
-Recommended formula:
-```
-score = (depth * 1000) + (kills * 50) + (bonus_multiplier * depth * 200)
-```
-
-- `depth` — floor/room number reached
-- `kills` — total enemies defeated
-- `bonus_multiplier` — awarded for taking no damage in a room, clearing quickly, etc.
-
-Submit with `window.gameOver(score)` at run end. Score must be an integer.
+Score must be a non-negative integer. Submit with `window.gameOver(score)`.
 
 ---
 
-## Visual identity
+## Visual identity principles
 
-A roguelite on Sparkade should have a consistent, readable aesthetic:
+**Readability above all.** In a fast-paced combat game, the player needs to read the scene instantly. Every visual decision should serve readability first, style second.
 
-- **Dark background** — always `#080808` or very close. Light backgrounds look wrong in the feed.
-- **Enemy colour coding** — each enemy type must have a distinct colour. Players learn enemy types visually within one run.
-- **Player colour** — always the Sparkade orange `#F55018`. This is the player, always.
-- **Health** — red `#ef4444` for damage, green `#22c55e` for pickups. Universal.
-- **Depth indicator** — always visible top-centre. Format: `DEPTH 3` in small monospace caps.
+- The player character must be immediately distinguishable from all enemies at a glance. This means shape differentiation, not just colour.
+- Each enemy type must have a visually distinct silhouette. A player should be able to identify enemy types in their peripheral vision.
+- Damage feedback (hit flashes, particles) must use colours that contrast with both the enemy colour and the environment.
+- The game background must never compete with gameplay elements for visual attention. Keep it dark, subtle, and consistent.
+- Health and danger must communicate instantly — the player should feel their HP dropping before they consciously read the HUD number.
+
+**Colour palette:** you have creative freedom here. Choose a palette that fits your theme and commit to it. The player character should use the Sparkade accent colour `#F55018` unless your theme has a strong reason otherwise.
 
 ---
 
 ## Run arc
 
-```
-MenuScene
-  └─ GameScene
-       ├─ Floor 1 (Rooms 1–3) → normal enemies, one upgrade choice
-       ├─ Floor 2 (Rooms 4–6) → harder enemies, two upgrade choices
-       ├─ Floor 3 (Rooms 7–9) → elite enemies + mini-boss, two upgrade choices
-       └─ Floor N... (infinite scaling)
-          └─ Every 3rd room = upgrade choice
-          └─ Every 9th room = boss encounter
-```
+The run is infinite — depth scales until the player dies. There is no win state. Structure the run in floors of 3 rooms each, with an upgrade room every 3rd room and a boss every 9th room.
 
-The run is infinite — depth scales until the player dies. There is no win condition. Score is the measure of success.
+Score is the measure of success.
 
 ---
 
-## What NOT to do
+## What NOT to build
 
-- Do not add inventory management — too complex for a 3-minute mobile run.
-- Do not add crafting or combining — same reason.
-- Do not add permanent meta-progression (unlocks between runs) — Sparkade has no persistent storage per game.
-- Do not add cutscenes or unskippable animations — the platform audience has zero patience for them.
-- Do not add more than 3 active upgrade slots — cognitive load kills replayability.
-- Do not add regenerating health — it removes tension. Health pickups only.
+These patterns kill the Sparkade roguelite experience:
+
+- **Inventory management** — too complex for a 3-minute mobile session
+- **Crafting or item combining** — same reason
+- **Permanent meta-progression** — Sparkade games have no persistent storage between sessions
+- **Unskippable intros or cutscenes** — the audience has zero patience for them
+- **More than 3 active upgrade slots** — cognitive overload destroys replayability
+- **Regenerating health** — removes tension entirely. Health pickups only.
+- **Enemies that are off-screen threats** — on mobile, if you can't see it, you can't react to it. Keep combat within the visible space.

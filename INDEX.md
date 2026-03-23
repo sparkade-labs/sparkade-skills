@@ -43,36 +43,12 @@ Fetch this after the genre skill if the game brief calls for high visual polish:
 
 ---
 
-## Deliverables — always produce both files
+## Deliverable — one file only
 
-Every game submission requires exactly two files:
+Every game submission requires exactly one file:
 
-### 1. `game.js`
-The complete Phaser 3 game. Single file, no imports, no placeholders, no TODOs.
-
-### 2. `manifest.json`
-Metadata consumed by the Sparkade platform. Always produce this alongside `game.js`.
-
-```json
-{
-  "slug":        "my-game-slug",
-  "title":       "My Game Title",
-  "category":    "Roguelite",
-  "description": "A one to two sentence description of the game. Write this as a player-facing blurb.",
-  "controls":    "Left side: move  ·  Right side: shoot",
-  "version":     "1.0.0",
-  "is_active":   true
-}
-```
-
-**Field rules:**
-- `slug` — lowercase, hyphens only, no spaces. Derived from the title. e.g. `"deep-sea-diver"`
-- `title` — title case, max ~24 characters
-- `category` — must match the genre exactly e.g. `"Roguelite"`, `"Endless Runner"`, `"Platformer"`
-- `description` — 1–2 sentences, player-facing, no spoilers about mechanics
-- `controls` — single line, ultra-concise. Format: `"Left: move  ·  Right: shoot"`
-- `version` — always `"1.0.0"` for new games
-- `is_active` — always `true`
+### `game.js`
+The complete Phaser 3 game. Single file, no imports, no placeholders, no TODOs. No other files are required or expected.
 
 ---
 

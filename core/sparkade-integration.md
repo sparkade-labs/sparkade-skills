@@ -6,14 +6,25 @@ The platform bridge is fixed infrastructure. Every game uses the same protocol �
 
 ## The Message Protocol
 
-The shell injects these functions onto `window` before your game loads:
+The shell injects these functions onto `window` before your game loads.
+
+### Required — every game must call these
 
 ```js
-window.gameStarted()        // call once when gameplay begins
-window.gameOver(score)      // call once when the run ends — score is a positive integer
-window.gameOver()           // call with no argument for games without scoring
-window.gameExit()           // call only from an explicit exit button
+window.gameStarted()   // call once when gameplay begins
+window.gameExit()      // call only from an explicit exit button
 ```
+
+These two are mandatory. A game file missing either will be rejected on submission.
+
+### Optional — only for games with scoring
+
+```js
+window.gameOver(score) // call once when a run ends — score is a positive integer
+window.gameOver()      // call with no argument if the session ends but there is no score
+```
+
+`gameOver` is not required. Clicker games, cozy games, and casual games where the player simply exits do not need it. If your game has a leaderboard, call `gameOver(score)` at the end of every run.
 
 **Timing rules that must not be broken:**
 - `gameStarted()` fires when the player is actually playing, not when the menu appears.
@@ -195,7 +206,7 @@ window.onDataLoaded = function(save) {
 window.onDataLoaded = function(save) {
   // Apply save state to your game before showing anything
   applyGameState(save);
-  // _iap is available here too
+  // _iap is available here too — read-only, never write it
   applyIapUnlocks(save._iap || {});
   // Now it is safe to start
   window.gameStarted();
@@ -211,6 +222,17 @@ window.loadItems();  // fires onItemsLoaded when ready — omit if no IAP
 ```
 
 Both calls return instantly from a preloaded cache — the platform fetches save data and items in parallel before your game script even loads, so there is no network wait in practice.
+
+### Exit button
+
+Every game must have a visible exit button. When tapped, flush any pending save first then call `gameExit()`:
+
+```js
+exitButton.on('pointerdown', function() {
+  window.saveData(currentState); // flush save
+  window.gameExit();             // hand control back to the platform
+});
+```
 
 ---
 

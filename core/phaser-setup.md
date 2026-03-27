@@ -17,6 +17,7 @@ const config = {
   height: H,
   backgroundColor: '#080808',
   parent: 'game-container',
+  resolution: window.devicePixelRatio || 1,   // HIGH-DPI FIX — mandatory
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -34,24 +35,12 @@ const config = {
   scene: [BootScene, MenuScene, GameScene, GameOverScene],
 };
 
-const game = new Phaser.Game(config);
-
-// HIGH-DPI FIX — mandatory. Without this, every sprite is blurry on modern phones.
-game.events.once('ready', () => {
-  const canvas = game.canvas;
-  const dpr    = window.devicePixelRatio || 1;
-  const w      = canvas.clientWidth  || W;
-  const h      = canvas.clientHeight || H;
-  canvas.width  = w * dpr;
-  canvas.height = h * dpr;
-  const ctx = canvas.getContext('2d');
-  if (ctx) ctx.scale(dpr, dpr);
-});
+new Phaser.Game(config);
 ```
 
-**Why `antialias: true`:** Sparkade games are rendered on high-DPI screens. Pixel art mode produces jagged, amateur-looking sprites. Smooth rendering is always correct here.
+**Why `resolution: window.devicePixelRatio`:** Phaser renders at logical resolution by default. On a phone with `devicePixelRatio: 3`, every texture renders at 1/3 native resolution and is upscaled — producing visible blur. Setting `resolution` in config is the correct Phaser 3.60+ fix. The old `canvas.getContext('2d')` approach does not work — Phaser uses a WebGL context, which returns `null` from `getContext('2d')`, causing a silent no-op.
 
-**Why the DPR fix:** Phaser renders at logical resolution by default. On a phone with `devicePixelRatio: 3`, every texture is rendered at 1/3 the native resolution and upscaled — producing visible blur. This fix forces native resolution rendering.
+**Why `antialias: true`:** Sparkade games render on high-DPI screens. Pixel art mode produces jagged, amateur-looking sprites. Smooth rendering is always correct here.
 
 ---
 
@@ -96,7 +85,7 @@ This is where most AI-generated games fail. A single flat shape is not a sprite 
 
 **Why this matters:** These five layers are what make a shape read as a 3D object under light. Without them, sprites look flat and amateur regardless of how good the game mechanics are. With them, even simple circles and rectangles look polished and intentional.
 
-Generate all textures in `BootScene` using `this.make.graphics()` + `generateTexture()`. Design each sprite to read clearly at its actual game size — if it's a 28×28 enemy, design at 28×28, not larger.
+Generate all textures in `BootScene` using `this.make.graphics()` + `generateTexture()`. The full pattern — including the mandatory `pixel` texture required for particles — is in `patterns.md` Pattern 3. Design each sprite to read clearly at its actual game size — if it's a 28×28 enemy, design at 28×28, not larger.
 
 Each enemy type must be visually distinct at a glance. If a player can't tell enemy types apart in the first 10 seconds, the designs have failed. Use different shapes, not just different colours.
 

@@ -46,14 +46,14 @@ new Phaser.Game(config);
 
 ## World Bounds — Always Enforce
 
-Gameplay must never leave the canvas. Enemies, players, and projectiles that escape the screen break the game instantly.
+Gameplay must never leave the canvas. Entities that escape the screen break the game instantly.
 
 ```js
 // In GameScene.create()
 this.physics.world.setBounds(0, 0, W, H);
 ```
 
-Every physics body that should stay on screen must have `setCollideWorldBounds(true)`. The player always does. Enemies should. Projectiles are destroyed at range limits instead.
+Every physics body that should stay on screen must have `setCollideWorldBounds(true)`. The player always does. Other entities should. Short-lived objects like projectiles are destroyed at range limits instead.
 
 Draw a visible boundary so players perceive the edges before hitting them. The style is your creative choice — it should fit the game's visual theme.
 
@@ -134,10 +134,10 @@ Event-based scoring (points on hit, points on pickup) is fine to apply immediate
 
 ## Performance Standards
 
-- Use object pools for bullets and frequently-spawned objects. Never `new` an object in `update()`.
+- Use object pools for projectiles and frequently-spawned objects. Never `new` an object in `update()`.
 - Use Phaser's built-in `ParticleEmitter` for particles.
-- Cap active enemy count at 15.
-- Bullets despawn at range limits, not by off-screen check.
+- Cap active entity count at 15.
+- Short-lived objects despawn at range limits, not by off-screen check.
 - Always use `delta`-based movement or Phaser physics velocities. Never hardcode per-frame pixel values.
 
 ---

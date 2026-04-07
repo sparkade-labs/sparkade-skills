@@ -399,11 +399,11 @@ _createStatRow(x, y, label, value, iconColour = 0xF55018) {
   }).setOrigin(1, 0.5).setDepth(DEPTH.OVERLAY);
 }
 
-// Usage — GameOver stats block:
+// Usage — GameOver stats block (values are examples — use whatever your genre tracks):
 const statsY = 480;
-this._createStatRow(W / 2 - 110, statsY,       'DEPTH',  runState.depth);
-this._createStatRow(W / 2 - 110, statsY + 28,  'KILLS',  runState.kills);
-this._createStatRow(W / 2 - 110, statsY + 56,  'ROOMS',  runState.rooms);
+this._createStatRow(W / 2 - 110, statsY,       'SCORE',  runState.score);
+this._createStatRow(W / 2 - 110, statsY + 28,  'TIME',   runState.time);
+this._createStatRow(W / 2 - 110, statsY + 56,  'LEVEL',  runState.level);
 ```
 
 ---

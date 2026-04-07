@@ -54,13 +54,13 @@ const DEPTH = {
   BG:         0,
   BG_DETAIL:  1,
   PICKUPS:    5,
-  ENEMIES:    10,
+  ENTITIES:   10,   // enemies, obstacles, NPCs — any game object the player interacts with
   PLAYER:     20,
-  BULLETS:    30,
+  PROJECTILES:30,   // bullets, thrown objects, any short-lived physics object
   FX:         40,   // particles, hit flashes
   HUD_BG:     90,   // semi-transparent HUD backing strips
-  HUD:        100,  // score, health, depth counter
-  OVERLAY:    200,  // upgrade screens, pause, game over panels
+  HUD:        100,  // score, timer, primary counter
+  OVERLAY:    200,  // selection screens, pause, game over panels
 };
 ```
 
@@ -147,7 +147,7 @@ this.scene.start('GameScene', { runState: this.runState });
 
 ## 5. Fixed Joystick — Complete Implementation
 
-The correct mobile control pattern for all top-down and action games. Fixed position builds muscle memory. Copy this verbatim — every variation produces subtle input bugs.
+The correct pattern for games requiring directional movement input on mobile. Fixed position builds muscle memory. Copy this verbatim — every variation produces subtle input bugs.
 
 ```js
 // In GameScene.create():
@@ -245,15 +245,15 @@ this._keys = this.input.keyboard.addKeys({
 
 ---
 
-## 6. Fire Button — Complete Implementation
+## 6. Action Button — Complete Implementation
 
-Paired with the joystick above. The fire button lives on the right half of the screen and tracks a separate pointer.
+Paired with the joystick above. A visible primary action button for the right half of the screen — shoot, jump, interact, or any genre-appropriate action. Tracks a separate pointer from the joystick.
 
 ```js
-_createFireButton() {
+_createActionButton() {
   const fx = W - 75, fy = H - 110;
 
-  this._fireBtn = this.add.circle(fx, fy, 38, 0xF55018, 0.15)
+  this._actionBtn = this.add.circle(fx, fy, 38, 0xF55018, 0.15)
     .setDepth(DEPTH.HUD)
     .setScrollFactor(0)
     .setInteractive();
@@ -262,23 +262,23 @@ _createFireButton() {
     .setDepth(DEPTH.HUD)
     .setScrollFactor(0);
 
-  // Icon — small triangle pointing up
+  // Icon — customise to match your genre (triangle = shoot, circle = jump, etc.)
   const icon = this.add.triangle(fx, fy, 0, 10, -9, -6, 9, -6, 0xF55018, 0.9)
     .setDepth(DEPTH.HUD)
     .setScrollFactor(0);
 
-  this._fireHeld = false;
+  this._actionHeld = false;
 
   this.input.on('pointerdown', (p) => {
     if (p.x < W / 2) return;   // left half is joystick
-    this._fireHeld = true;
-    this._fireBtn.setFillStyle(0xF55018, 0.35);
+    this._actionHeld = true;
+    this._actionBtn.setFillStyle(0xF55018, 0.35);
     icon.setAlpha(1);
   });
   this.input.on('pointerup', (p) => {
     if (p.x < W / 2) return;
-    this._fireHeld = false;
-    this._fireBtn.setFillStyle(0xF55018, 0.15);
+    this._actionHeld = false;
+    this._actionBtn.setFillStyle(0xF55018, 0.15);
     icon.setAlpha(0.9);
   });
 }
@@ -408,12 +408,12 @@ this.enemies.getChildren().forEach(e => { ... });
 
 ```js
 // ❌ WRONG — called during physics step
-this.physics.add.overlap(this.player, this.enemies, () => {
+this.physics.add.overlap(this.player, this.hazards, () => {
   window.gameOver(this.score);   // crashes in physics callback
 });
 
 // ✅ CORRECT — defer by one tick with delayedCall(0)
-this.physics.add.overlap(this.player, this.enemies, () => {
+this.physics.add.overlap(this.player, this.hazards, () => {
   if (this._dead) return;
   this._dead = true;
   this._runDeathSequence();
@@ -502,8 +502,8 @@ _createHUD() {
     .setDepth(DEPTH.HUD_BG)
     .setScrollFactor(0);                   // ← does not scroll with camera
 
-  // Score — top right
-  this._scoreTxt = this.add.text(W - 16, 14, '0', {
+  // Primary counter (score, distance, time) — top right
+  this._primaryTxt = this.add.text(W - 16, 14, '0', {
     fontFamily: 'monospace',
     fontSize:   '22px',
     color:      '#ffffff',
@@ -515,8 +515,9 @@ _createHUD() {
     .setDepth(DEPTH.HUD)
     .setScrollFactor(0);
 
-  // Depth/floor — top centre
-  this._depthTxt = this.add.text(W / 2, 14, 'FLOOR 1', {
+  // Secondary info (level, depth, lives, timer) — top centre
+  // What this shows is your design decision — keep it to one piece of information
+  this._secondaryTxt = this.add.text(W / 2, 14, '', {
     fontFamily: 'monospace',
     fontSize:   '13px',
     color:      '#aaaaaa',
@@ -526,23 +527,11 @@ _createHUD() {
     .setOrigin(0.5, 0)
     .setDepth(DEPTH.HUD)
     .setScrollFactor(0);
-
-  // Health bar — top left
-  this._hpBarBg = this.add.rectangle(16, 22, 120, 8, 0x333333)
-    .setOrigin(0, 0.5)
-    .setDepth(DEPTH.HUD)
-    .setScrollFactor(0);
-  this._hpBar = this.add.rectangle(16, 22, 120, 8, 0x22cc66)
-    .setOrigin(0, 0.5)
-    .setDepth(DEPTH.HUD)
-    .setScrollFactor(0);
 }
 
 _updateHUD() {
-  this._scoreTxt.setText(this.runState.score.toLocaleString());
-  const pct = Math.max(0, this.runState.hp / this.runState.maxHp);
-  this._hpBar.setDisplaySize(120 * pct, 8);
-  this._hpBar.setFillStyle(pct > 0.5 ? 0x22cc66 : pct > 0.25 ? 0xf5a623 : 0xee3333);
+  this._primaryTxt.setText(this.score.toLocaleString());
+  // Update secondary text with whatever your genre tracks — depth, lives, time remaining, etc.
 }
 ```
 
@@ -588,68 +577,63 @@ _increaseDifficulty() {
 
 ---
 
-## 14. Upgrade Screen — Scene Pause + Launch Pattern
+## 14. Selection Overlay — Pause + Choice + Resume Pattern
 
-The upgrade screen must pause the game world but keep it visible behind the overlay. The correct pattern is `scene.pause()` + `scene.launch()`, not a separate scene transition.
+For any moment where the game pauses and presents the player with a set of choices before continuing — upgrades, route selection, item picks, level rewards. The game world freezes but stays visible behind the overlay.
 
 ```js
-// In GameScene — show upgrade screen after room clear:
-_showUpgradeScreen(choices) {
+// In GameScene — show selection screen:
+_showSelectionScreen(choices) {
   this.scene.pause('GameScene');                 // freeze game world
-  this.scene.launch('UpgradeScene', {           // launch overlay on top
+  this.scene.launch('SelectionScene', {         // launch overlay on top
     choices:  choices,
-    runState: this.runState,
+    gameData: this._buildGameData(),            // pass whatever your genre needs
   });
 
   // Listen for the player's choice
-  this.scene.get('UpgradeScene').events.once('upgrade-chosen', (upgrade) => {
-    this._applyUpgrade(upgrade);
-    this.scene.resume('GameScene');             // unfreeze game world
-    this._startNextRoom();
+  this.scene.get('SelectionScene').events.once('choice-made', (choice) => {
+    this._applyChoice(choice);
+    this.scene.resume('GameScene');
+    this._onSelectionComplete();
   });
 }
 
-// UpgradeScene — renders on top of the paused GameScene
-class UpgradeScene extends Phaser.Scene {
-  constructor() { super({ key: 'UpgradeScene', active: false }); }
+// SelectionScene — renders on top of the paused GameScene
+class SelectionScene extends Phaser.Scene {
+  constructor() { super({ key: 'SelectionScene', active: false }); }
 
   init(data) {
     this.choices  = data.choices;
-    this.runState = data.runState;
+    this.gameData = data.gameData;
   }
 
   create() {
-    // Semi-transparent overlay behind the cards
+    // Backdrop — blocks input to the paused scene below (mandatory)
     this.add.rectangle(0, 0, W, H, 0x000000, 0.72)
       .setOrigin(0)
       .setDepth(0)
-      .setInteractive();   // ← blocks input to the paused scene below
-
-    const RARITY_COLOUR = { common: 0x888888, rare: 0x4488ff, epic: 0xcc44ff };
+      .setInteractive();
 
     this.choices.forEach((choice, i) => {
       const y    = 280 + i * 145;
-      const col  = RARITY_COLOUR[choice.rarity] || 0x888888;
 
+      // Card — visual style (colour, border treatment) belongs to your genre skill
       const card = this.add.rectangle(W / 2, y, 300, 120, 0x1a1a1a)
-        .setStrokeStyle(2, col, 0.9)
+        .setStrokeStyle(2, 0xffffff, 0.4)
         .setInteractive()
         .setDepth(1);
 
+      // Primary label — name, title, or option identifier
       this.add.text(W / 2, y - 22, choice.name, {
         fontFamily: 'monospace', fontSize: '18px',
         color: '#ffffff', stroke: '#000', strokeThickness: 3,
       }).setOrigin(0.5).setDepth(2);
 
-      this.add.text(W / 2, y + 8, choice.description, {
+      // Secondary label — description, cost, effect summary
+      this.add.text(W / 2, y + 12, choice.description, {
         fontFamily: 'monospace', fontSize: '12px',
         color: '#aaaaaa', stroke: '#000', strokeThickness: 2,
         wordWrap: { width: 260 },
-      }).setOrigin(0.5).setDepth(2);
-
-      this.add.text(W / 2, y + 42, choice.rarity.toUpperCase(), {
-        fontFamily: 'monospace', fontSize: '10px',
-        color: '#' + col.toString(16).padStart(6, '0'),
       }).setOrigin(0.5).setDepth(2);
 
       // Staggered entry animation
@@ -660,15 +644,15 @@ class UpgradeScene extends Phaser.Scene {
       });
 
       card.on('pointerdown', () => {
-        this.events.emit('upgrade-chosen', choice);   // ← signal back to GameScene
+        this.events.emit('choice-made', choice);
         this.scene.stop();
       });
     });
   }
 }
 
-// Register UpgradeScene in the game config:
-// scene: [BootScene, MenuScene, GameScene, UpgradeScene, GameOverScene]
+// Register SelectionScene in the game config:
+// scene: [BootScene, MenuScene, GameScene, SelectionScene, GameOverScene]
 ```
 
 ---
@@ -751,13 +735,13 @@ _playSound(type) {
 
 ---
 
-## 16. Object Pooling — Bullets
+## 16. Object Pooling — Short-Lived Entities
 
-Never create objects in `update()`. Pre-allocate a pool in `create()` and recycle from it.
+Never create objects in `update()`. Pre-allocate a pool in `create()` and recycle from it. This applies to any frequently spawned and destroyed object — projectiles, particles stand-ins, collectibles, debris.
 
 ```js
 // In create():
-this.bullets = this.physics.add.group({
+this.projectiles = this.physics.add.group({
   classType:  Phaser.Physics.Arcade.Image,
   maxSize:    40,
   runChildUpdate: false,
@@ -765,19 +749,19 @@ this.bullets = this.physics.add.group({
 
 // Pre-populate the pool (optional — group lazy-creates if needed)
 for (let i = 0; i < 40; i++) {
-  const b = this.bullets.create(0, 0, 'bullet');
+  const b = this.projectiles.create(0, 0, 'projectile');
   b.setActive(false).setVisible(false);
 }
 
-// Fire a bullet — get from pool, position, activate
-_fireBullet(x, y, angle) {
-  const b = this.bullets.getFirstDead(false);
-  if (!b) return;   // pool exhausted — skip this shot
+// Spawn from pool — position, activate, set velocity
+_spawnProjectile(x, y, angle) {
+  const b = this.projectiles.getFirstDead(false);
+  if (!b) return;   // pool exhausted — skip
 
   b.setPosition(x, y)
    .setActive(true)
    .setVisible(true)
-   .setDepth(DEPTH.BULLETS)
+   .setDepth(DEPTH.PROJECTILES)
    .setRotation(angle);
 
   const speed = 560;
@@ -785,16 +769,16 @@ _fireBullet(x, y, angle) {
     Phaser.Math.RadToDeg(angle), speed, b.body.velocity
   );
 
-  // Auto-despawn after max range (do not check off-screen — use time)
+  // Auto-despawn after max range — use time, not off-screen check
   this.time.delayedCall(700, () => {
     if (b.active) b.setActive(false).setVisible(false);
   });
 }
 
 // In the overlap callback — recycle on hit:
-this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
-  bullet.setActive(false).setVisible(false);
-  this._onEnemyHit(enemy);
+this.physics.add.overlap(this.projectiles, this.hazards, (projectile, hazard) => {
+  projectile.setActive(false).setVisible(false);
+  this._onHit(hazard);
 });
 ```
 
@@ -812,7 +796,7 @@ _drawBoundary() {
   border.lineStyle(2, 0x333333, 0.6);
   border.strokeRect(4, 64, W - 8, H - 68);
 
-  // Corner accents — communicate "arena"
+  // Corner accents — visual style should match your game's theme
   const len = 20, thick = 2;
   const corners = [
     [4, 64], [W - 4, 64], [4, H - 4], [W - 4, H - 4]

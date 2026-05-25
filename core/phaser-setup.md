@@ -61,14 +61,18 @@ Every physics body that must stay on screen needs `setCollideWorldBounds(true)`.
 
 ---
 
-## Scene Architecture
+## Scene Organisation
 
-Four scenes. This structure is the standard — deviating from it produces lifecycle bugs with the platform bridge calls.
+Phaser scenes are how you separate the phases of a game. A common, reliable structure is four scenes, but this is an organising convention, not a platform requirement — the bridge calls work from any scene. A very simple game might use two scenes; a more complex one might use more. Use as many as the game needs.
 
-- **BootScene** — generates all procedural textures. No gameplay. Transitions immediately to MenuScene.
-- **MenuScene** — title and start prompt. Calls `window.gameStarted()` when the player commits to starting.
-- **GameScene** — all gameplay. Calls `window.gameOver(score)` when the run ends.
-- **GameOverScene** — run summary. Has "play again" and "exit" actions.
+A typical layout:
+
+- **Boot** — generates all procedural textures, then transitions on. No gameplay.
+- **Menu** — title and a start prompt. Calls `window.gameStarted()` when the player begins.
+- **Game** — gameplay. Calls `window.gameOver(score)` (or `window.gameOver()` for a scoreless game) when the run ends.
+- **End / GameOver** — summary, with "play again" and "exit" actions.
+
+The only hard rules tied to scenes are the bridge timing rules in `sparkade-integration.md`: `gameStarted()` when play begins, `gameOver()` once at run end, `gameExit()` only from a deliberate exit. Which scene fires each is up to you.
 
 Pass data between scenes via the second argument to `scene.start()`. Do not use global variables for scene state.
 
@@ -96,11 +100,13 @@ The same rule applies to speed ramps, spawn timers, difficulty scaling — anyth
 
 ## Performance Constraints
 
-- Cap active entity count at 15.
-- Use object pools for projectiles and frequently-spawned objects. Never `new` inside `update()`.
-- Use Phaser's built-in `ParticleEmitter` for particles.
-- Use `delta`-based movement or Phaser physics velocities. Never hardcode per-frame pixel values.
-- Short-lived objects: despawn at range limit, not by off-screen check.
+The game runs on phones inside an iframe. Keep it smooth:
+
+- Be mindful of how many active objects are on screen and updating at once. If a game spawns many objects, pool and recycle them rather than creating and destroying continuously.
+- Never call `new` (or create Phaser objects) inside `update()` — pre-allocate and reuse. See the pooling pattern in `patterns.md`.
+- Use Phaser's built-in `ParticleEmitter` for particle effects rather than managing many individual objects.
+- Use `delta`-based movement or Phaser physics velocities — never hardcode per-frame pixel values.
+- For short-lived objects, despawn on a time or range limit rather than only when off-screen.
 
 ---
 

@@ -395,11 +395,12 @@ _createStatRow(x, y, label, value, iconColour = 0xF55018) {
   }).setOrigin(1, 0.5).setDepth(DEPTH.OVERLAY);
 }
 
-// Usage — GameOver stats block (values are examples — use whatever your genre tracks):
+// Usage — an end screen stats block. Use whatever your game actually tracks;
+// these labels are just examples:
 const statsY = 480;
-this._createStatRow(W / 2 - 110, statsY,       'SCORE',  runState.score);
-this._createStatRow(W / 2 - 110, statsY + 28,  'TIME',   runState.time);
-this._createStatRow(W / 2 - 110, statsY + 56,  'LEVEL',  runState.level);
+this._createStatRow(W / 2 - 110, statsY,       'SCORE', endState.score);
+this._createStatRow(W / 2 - 110, statsY + 28,  'TIME',  endState.time);
+this._createStatRow(W / 2 - 110, statsY + 56,  'BEST',  endState.best);
 ```
 
 ---
@@ -487,7 +488,7 @@ const backdrop = this.add.rectangle(0, 0, W, H, 0x000000, 0.6)
 const backdrop = this.add.rectangle(0, 0, W, H, 0x000000, 0.6)
   .setOrigin(0);        // no setInteractive() — input passes straight through
 
-// For UpgradeScene / PauseScene launched over GameScene:
+// For any overlay scene (e.g. PauseScene) launched over GameScene:
 // The backdrop rectangle must be the FIRST thing added in create()
 // and must call setInteractive() — even with no event listeners.
 // This is all that's needed to block the scene below.
@@ -536,7 +537,7 @@ _createExitButton(x, y) {
 // Typical GameOverScene layout — Play Again is primary, Exit is below it
 _buildGameOverActions() {
   this._createButton(W / 2, H - 160, 'PLAY AGAIN', 'primary',   () => {
-    this.scene.start('GameScene', { runState: this._defaultRunState() });
+    this.scene.start('GameScene', { state: { score: 0 } });
   });
   this._createExitButton(W / 2, H - 96);
 }
@@ -553,9 +554,9 @@ _buildPauseActions() {
 
 ---
 
-## 12. Rarity Badge — Coloured Tier Tag
+## 12. Coloured Tier Badge — Optional
 
-Used in upgrade screens, item shops, and loot displays. The rarity tier names and colours below are examples — define your own to match your game's theme and vocabulary.
+A small coloured tag for labelling items or options by tier or category. **Entirely optional** — only useful if your game has a concept of tiers, categories, or grades to display. The tier names and colours below are placeholder examples; define whatever vocabulary fits your game, or omit this pattern.
 
 ```js
 // Define your own rarity tiers and colours to match your game's theme

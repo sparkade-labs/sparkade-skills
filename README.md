@@ -1,8 +1,8 @@
 # Sparkade Skills
 
-> AI agent skill files for building games on the [Sparkade](https://sparkade.games) platform.
+> AI agent skill files for building games on the Sparkade platform.
 
-These skills are designed to be fetched by AI agents during game development. They encode Sparkade's standards for game architecture, platform integration, mobile UX, and genre-specific mechanics.
+These skills are designed to be fetched by AI agents during game development. They encode how to integrate the Sparkade platform in Phaser v4 games: the platform bridge API, required configuration, verified Phaser patterns, and UI correctness rules.
 
 ## Usage
 
@@ -19,16 +19,11 @@ The index will instruct the agent which skills to fetch based on the game being 
 ```
 INDEX.md                          ← Start here
 core/
-├── phaser-setup.md               ← Phaser 3.90.0 config & scene structure
-├── sparkade-integration.md       ← Platform message protocol & touch input
-└── polish.md                     ← Juice, VFX, audio, camera effects
-genres/
-└── roguelite/
-    ├── SKILL.md                  ← Genre overview & four pillars
-    ├── run-structure.md          ← Room state machine, HUD, depth scaling
-    ├── combat.md                 ← Player, enemies, collision, damage
-    ├── upgrades.md               ← Upgrade system & selection UI
-    └── procedural.md             ← Enemy composition, spawning, bosses
+├── hidpi.md                      ← HiDPI plugin — mandatory, fixes blurry rendering
+├── phaser-setup.md               ← Phaser v4 config & scene structure
+├── patterns.md                   ← Copy-paste Phaser v4 API patterns
+├── sparkade-integration.md       ← Platform bridge protocol, save system, IAP
+└── ui.md                         ← In-game UI correctness patterns
 ```
 
 ## License

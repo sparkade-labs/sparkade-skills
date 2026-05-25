@@ -1,46 +1,49 @@
 > © Sparkade. Licensed under CC BY-NC-ND 4.0.  
 > These skills are provided for AI-assisted game development on the Sparkade platform only.
 
-# Phaser 3.90 Patterns — Sparkade Core Skill
+# Phaser v4 Patterns — Sparkade Core Skill
 
-These are copy-paste patterns for the exact Phaser 3.90 APIs used in every Sparkade game. Each pattern solves a specific, documented failure mode. Do not deviate from these — every variation listed here has been tested to fail in the iframe environment.
+These are copy-paste patterns for the Phaser v4 APIs used in every Sparkade game. Each pattern solves a specific, documented failure mode. Do not deviate from these — every variation listed here has been tested to fail in the Sparkade iframe environment.
 
-Read this file after `phaser-setup.md` and before any genre skill.
+Read this file after `phaser-setup.md` and `hidpi.md`.
+
+**`px()` is always in scope.** All pixel measurements in these patterns — coordinates, sizes, radii, font sizes, line widths, strokeThickness, physics velocities, tween pixel targets — must be wrapped with `px()`. `W` and `H` are already pre-multiplied and must not be wrapped. See `hidpi.md` for the complete rule. The patterns below omit `px()` wrapping for readability; apply it to every pixel value when implementing.
 
 ---
 
-## 1. Game Configuration — Correct DPR Handling
+## 1. Game Configuration — HiDPI-Correct Setup
 
-The `game.canvas.getContext('2d')` approach fails silently on WebGL renderers. Use `resolution` instead.
+Use `devicePixelRender` (global provided by the shell) for correct HiDPI rendering. Do not set `resolution:` manually.
 
 ```js
-const W = 390, H = 844;
+const LOGICAL_W = 390;
+const LOGICAL_H = 844;
 
-const config = {
-  type: Phaser.AUTO,
-  width: W,
-  height: H,
+const { game: hidpiConfig, px } = devicePixelRender({ width: LOGICAL_W, height: LOGICAL_H });
+
+const W = px(LOGICAL_W);   // physical pixel width — use for all layout
+const H = px(LOGICAL_H);   // physical pixel height — use for all layout
+
+new Phaser.Game(Object.assign(hidpiConfig, {
+  type:            Phaser.AUTO,
   backgroundColor: '#080808',
-  parent: 'game-container',
-  resolution: window.devicePixelRatio || 1,   // ← correct DPR fix
+  parent:          'game-container',
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode:       Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   render: {
-    pixelArt: false,
-    antialias: true,
+    pixelArt:    false,
+    antialias:   true,
     antialiasGL: true,
     roundPixels: false,
   },
   physics: {
     default: 'arcade',
-    arcade: { gravity: { y: 0 }, debug: false },
+    arcade:  { gravity: { y: 0 }, debug: false },
   },
   scene: [BootScene, MenuScene, GameScene, GameOverScene],
-};
-
-new Phaser.Game(config);
+}));
 ```
 
 ---
@@ -617,7 +620,7 @@ class SelectionScene extends Phaser.Scene {
     this.choices.forEach((choice, i) => {
       const y    = 280 + i * 145;
 
-      // Card — visual style (colour, border treatment) belongs to your genre skill
+      // Card background — style to your game's design
       const card = this.add.rectangle(W / 2, y, 300, 120, 0x1a1a1a)
         .setStrokeStyle(2, 0xffffff, 0.4)
         .setInteractive()
@@ -897,9 +900,7 @@ class GameScene extends Phaser.Scene {
 
 ## 20. Hitstop — Freeze Frames on Impact
 
-The single most impactful juice technique in action games. Pausing the physics simulation for 60–150ms on a kill lets the player's brain register the hit. Without it, kills feel accidental. With it, every kill feels deliberate.
-
-Scale duration to significance. Guard against stacking with a flag — nested hitstops compound and feel wrong.
+Briefly pauses the physics simulation on a significant hit. Guard against stacking with a flag — nested hitstops compound incorrectly.
 
 ```js
 // In create():
@@ -933,7 +934,7 @@ _hitstop(duration = 80) {
 
 ## 21. Score Counter Tween — Animated Number Counting
 
-A score that jumps instantly to its new value is a missed opportunity. Use `tweens.addCounter()` to animate it counting up. This applies both to the in-game HUD score and especially to the GameOver score reveal.
+Use `tweens.addCounter()` to animate a score counting up rather than jumping instantly to its new value.
 
 ```js
 // In-game HUD — fast, snappy (called whenever score changes)
@@ -962,7 +963,6 @@ _animateScoreFinal(finalScore) {
       this._finalScoreTxt.setText(Math.floor(tween.getValue()).toLocaleString());
     },
     onComplete: () => {
-      // Personal best badge animates in AFTER the count completes
       if (this._isPersonalBest) this._showPersonalBestBadge();
     },
   });

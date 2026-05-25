@@ -20,13 +20,9 @@ These are not design decisions — they are correctness requirements. Every othe
 - **All modal backdrops must call `.setInteractive()`** — even with no handler. This is what blocks touch input from passing through to the game world below.
 - **Exit must appear in menus, not overlaid on gameplay** — see Pattern 11.
 
-Everything else — what the UI looks like — is your creative decision. Match it to the game's theme.
-
 ---
 
 ## 1. Panel — Rounded Rectangle with Header
-
-The base container for any in-game overlay. Visual style (colours, radius, opacity) should match your game's theme — the structure below is the mechanism, not the aesthetic.
 
 ```js
 _createPanel(x, y, w, h, title) {
@@ -67,7 +63,7 @@ _createPanel(x, y, w, h, title) {
 
 ## 2. Button — Three States: Default, Pressed, Disabled
 
-Every button needs these three states regardless of visual style. The mechanics below are fixed — colours, fonts, and radius are yours to define to match the game's theme.
+Every button needs these three states. Colours, fonts, and radius are your choices — the interaction mechanics below are fixed.
 
 ```js
 // Call with your game's colour choices — do not copy these hex values verbatim
@@ -160,7 +156,7 @@ btn.setInteractive(
 
 ## 4. Health Bar — Segmented and Smooth Variants
 
-Two patterns: segmented (roguelite, showing discrete lives) and smooth (continuous HP pool).
+Two patterns: segmented (discrete pips) and smooth (continuous fill).
 
 ```js
 // Smooth HP bar — fills from left, colour-shifts with health
@@ -271,7 +267,7 @@ _showModal({ title, body, primaryLabel, secondaryLabel, onPrimary, onSecondary }
 
 ## 6. Toast Notification — Non-Blocking
 
-For feedback that doesn't require a response: "Perfect Room!", "Streak x3", "New Best!". Appears, holds briefly, fades. Never blocks input. Colour and style should fit your game's theme.
+Non-blocking feedback that appears, holds briefly, then fades. Never blocks input.
 
 ```js
 _toast(message, colour, duration = 1800) {
@@ -599,7 +595,7 @@ _createRarityBadge(x, y, rarity) {
 
 ## Common Failures — Quick Reference
 
-These produce broken UI every time. Note: colours, fonts, and visual style are not in this list — those are creative decisions, not correctness requirements.
+These produce broken UI every time.
 
 | Failure | Fix |
 |---------|-----|

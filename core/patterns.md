@@ -73,6 +73,13 @@ const DEPTH = {
 
 All graphics are procedural — never load external URLs. Generate every texture in `BootScene.create()` using this exact pattern. The `generateTexture()` call converts the graphics object into a named texture key that all other scenes can use.
 
+**Generate each texture exactly once, in BootScene — never inside `update()`, a click
+handler, or any repeating code.** `generateTexture()` allocates a new GPU texture every
+call; regenerating one on every frame or every tap is a memory leak that degrades the
+game over a session. If a thing needs several variants (e.g. the same shape in 8
+colours), generate all 8 once in BootScene with distinct keys, then switch between them
+at runtime with `setTexture(key)` — never regenerate on the fly.
+
 ```js
 class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
@@ -117,7 +124,7 @@ class BootScene extends Phaser.Scene {
 
 ## 4. Scene Data Passing — init() not create()
 
-Data passed to `scene.start('Name', data)` arrives in `init(data)`, not `create()`. This is the most common wiring bug in multi-scene games — if state you passed is `undefined` in the next scene, this is why.
+Data passed to `scene.start('Name', data)` arrives in `init(data)`, not `create()`. This is the most common wiring bug in multi-scene games — if your run state is `undefined` in room two, this is why.
 
 ```js
 class GameScene extends Phaser.Scene {
@@ -125,26 +132,32 @@ class GameScene extends Phaser.Scene {
 
   // init() runs before preload() and create() — this is where scene data arrives
   init(data) {
-    // Default any state your game carries between scenes.
-    // Shape this to whatever your game actually tracks — score, level,
-    // lives, settings, a saved run, nothing at all. This is just an example.
-    this.state = data.state || { score: 0 };
+    this.runState = data.runState || {
+      depth:    1,
+      floor:    1,
+      score:    0,
+      hp:       100,
+      maxHp:    100,
+      kills:    0,
+      upgrades: [],
+      tookDamageThisRoom: false,
+    };
   }
 
   create() {
-    // this.state is fully populated here
+    // this.runState is fully populated here
   }
 }
 
-// Passing state forward:
-this.scene.start('GameScene', { state: this.state });
+// Passing state to the next room:
+this.scene.start('GameScene', { runState: this.runState });
 ```
 
 ---
 
-## 5. Fixed Joystick — Optional, For Directional Movement
+## 5. Fixed Joystick — Complete Implementation
 
-**Only relevant if your game needs free directional movement.** Many Sparkade games do not — a one-tap game, a tap-target game, a swipe game, or a tilt game needs none of this. Do not add a joystick unless the game design calls for analog movement. When it does, this is the correct mobile pattern; fixed position builds muscle memory. Copy it verbatim — every variation produces subtle input bugs.
+The correct pattern for games requiring directional movement input on mobile. Fixed position builds muscle memory. Copy this verbatim — every variation produces subtle input bugs.
 
 ```js
 // In GameScene.create():
@@ -242,9 +255,9 @@ this._keys = this.input.keyboard.addKeys({
 
 ---
 
-## 6. Action Button — Optional, For a Primary Action
+## 6. Action Button — Complete Implementation
 
-**Only relevant if your game has a held or tapped primary action** (shoot, jump, dash) and uses the joystick above for movement. A game driven entirely by tapping the screen, or by a single full-screen tap, does not need a separate action button — just handle `pointerdown` directly. When you do need a discrete on-screen action control, this tracks a separate pointer from the joystick.
+Paired with the joystick above. A visible primary action button for the right half of the screen — shoot, jump, interact, or any genre-appropriate action. Tracks a separate pointer from the joystick.
 
 ```js
 _createActionButton() {
@@ -431,7 +444,10 @@ _runDeathSequence() {
     window.gameOver(this.score);        // ✅ safe — called outside physics step
     this.cameras.main.fadeOut(400);
     this.time.delayedCall(420, () => {
-      this.scene.start('GameOverScene', { score: this.score });
+      this.scene.start('GameOverScene', {
+        score:    this.score,
+        runState: this.runState,
+      });
     });
   });
 }
@@ -557,11 +573,11 @@ this.time.addEvent({
   callback: () => { this._staggerSpawn(); },
 });
 
-// Scale difficulty over time — replace the timer with a new one (don't mutate the delay)
+// Scale difficulty — replace the timer with a new one (don't mutate the delay)
 _increaseDifficulty() {
   this._spawnTimer.remove();
   this._spawnTimer = this.time.addEvent({
-    delay:    Math.max(600, 2000 - this._difficulty * 120),
+    delay:    Math.max(600, 2000 - this.runState.depth * 120),
     callback: this._spawnEnemy,
     callbackScope: this,
     loop:     true,
@@ -571,9 +587,9 @@ _increaseDifficulty() {
 
 ---
 
-## 14. Pause-and-Choose Overlay — Optional Technique
+## 14. Selection Overlay — Pause + Choice + Resume Pattern
 
-**Only relevant if your game pauses to present the player with a choice** — and many never do. This is the general technique for freezing the game world, showing options on top, and resuming after a pick (useful for any pause-and-select moment, whatever the choices represent in your game). The world stays visible behind the overlay. Skip this entirely if your game has no such moment.
+For any moment where the game pauses and presents the player with a set of choices before continuing — upgrades, route selection, item picks, level rewards. The game world freezes but stays visible behind the overlay.
 
 ```js
 // In GameScene — show selection screen:
@@ -860,7 +876,7 @@ class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }    // ✅
 
   init(data) {
-    this.state = data.state || { score: 0 };
+    this.runState = data.runState || this._defaultRunState();
   }
 
   preload() {
@@ -868,18 +884,21 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
-    // Build whatever this game needs. These calls are illustrative —
-    // a simple game might only create a player and a HUD; an input-light
-    // game might not create a joystick at all.
-    this._createWorld();
+    this._buildRoom();
     this._createPlayer();
     this._createHUD();
+    this._createJoystick();
+    this._createFireButton();
     this._dead = false;
+    this._iFrames = false;
   }
 
   update(time, delta) {
     if (this._dead) return;
-    // Drive your game from delta-based logic and input here.
+    this._applyJoystick(220);
+    this._handleKeyboard();
+    this._autoFire(delta);
+    this._clampPlayer();
   }
 }
 ```

@@ -79,9 +79,23 @@ window.gameOver(); // no score — session ends cleanly
 
 Games can persist JSON data between sessions. The platform stores one save blob per user per game.
 
+> **Persistence is two halves — you must do BOTH or progress is silently lost.**
+> Saving without loading is the single most common mistake. If your game has any
+> progression (score, level, currency, unlocks, upgrades, settings), you must:
+> 1. **Load on startup** — call `window.loadData()` and register `window.onDataLoaded`
+>    to restore the saved state *before* the player starts playing.
+> 2. **Save on change** — call `window.saveData(state)` when meaningful progress
+>    occurs, and again before `gameOver()` / `gameExit()`.
+>
+> A game that calls `saveData()` but never `loadData()` will appear to work in a
+> single session, then reset to zero every time it reopens — which for a clicker,
+> idle, RPG, or any progression game means the whole point of the game is broken.
+> If your game has nothing worth persisting, skip the save system entirely. There
+> is no middle ground: either wire up both halves, or use neither.
+
 ### Reading save data
 
-Call `window.loadData()` early in your scene's `create()`. The result arrives asynchronously via the callback — **do not assume data is available synchronously.**
+Call `window.loadData()` early in your scene's `create()`. The result arrives asynchronously via the callback — **do not assume data is available synchronously.** Apply the returned state to your game before the player can act on it.
 
 ```js
 window.onDataLoaded = function(save) {
@@ -221,13 +235,26 @@ window.onDataLoaded = function(save) {
 
 ## Recommended Initialisation Pattern
 
+Keep your persisted state in **one object with one consistent shape**. Save that
+object, load it back, and apply it — the shape you write must be the shape you read.
+Mismatched shapes (storing a value one way and reading it another) are a common
+source of progression bugs.
+
 ```js
+// A single state object — this exact shape is what you save AND load.
+var state = { score: 0, level: 1, coins: 0, upgrades: {} };
+
 // In your opening scene's create():
 window.onDataLoaded = function(save) {
-  // Apply save state to your game before showing anything
-  applyGameState(save);
+  // Merge saved values over the defaults. Reading the same keys you wrote.
+  state.score    = save.score    || 0;
+  state.level    = save.level     || 1;
+  state.coins    = save.coins     || 0;
+  state.upgrades = save.upgrades  || {};
+
   // _iap is available here too — read-only, never write it
   applyIapUnlocks(save._iap || {});
+
   // Now it is safe to start
   window.gameStarted();
 };
@@ -239,9 +266,19 @@ window.onItemsLoaded = function(items) {
 
 window.loadData();   // fires onDataLoaded when ready
 window.loadItems();  // fires onItemsLoaded when ready — omit if no IAP
+
+// Later, whenever progress changes, save the SAME object you loaded into:
+function persist() {
+  window.saveData(state);   // same shape, every time
+}
 ```
 
 Both calls return instantly from a preloaded cache — the platform fetches save data and items in parallel before your game script even loads, so there is no network wait in practice.
+
+**Derived values vs stored values:** store the raw facts, derive everything else at
+load time. For example, store `upgrades.click_power = 3` (the level owned) and compute
+the actual multiplier from it on load — don't store the computed multiplier, or the
+stored level and the live value will drift apart. One source of truth, recomputed on load.
 
 ### Exit button
 
